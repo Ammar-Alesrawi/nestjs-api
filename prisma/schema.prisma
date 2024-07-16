@@ -29,5 +29,5 @@ model Bookmark{
   updatedAt DateTime @updatedAt
   title String
   description String?
-  lonk String
+  link String
 }
