@@ -21,15 +21,34 @@ export class AuthService {
       // return the saved user
       return user;
     } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError) { // error from PrismaClient = 500 error message
-        if(error.code==='P2002'){ // P2002 => dublicate the row like id
+      if (error instanceof PrismaClientKnownRequestError) {
+        // error from PrismaClient = 500 error message
+        if (error.code === 'P2002') {
+          // P2002 => dublicate the row like id
           throw new ForbiddenException('Credentials taken');
         }
       }
       throw error;
     }
   }
-  signin() {
-    return 'I am signed in';
+  async signin(dto: AuthDto) {
+    // find the user by email
+    const user = await this.prisma.user.findUnique({
+      where:{
+        email:dto.email,
+      },
+    })
+    // if user does not exist throw exception
+    if(!user) throw new ForbiddenException('Credentials incorresct');
+
+    // compare password
+    const pwMatches = await argon.verify(user.hash, dto.password);
+
+    // if password incorrect throw exception
+    if (!pwMatches) throw new ForbiddenException('Credentials incorresct');
+
+    // send back the user
+    delete user.hash;
+    return user;
   }
 }
